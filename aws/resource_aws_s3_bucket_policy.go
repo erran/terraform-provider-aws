@@ -19,6 +19,10 @@ func resourceAwsS3BucketPolicy() *schema.Resource {
 		Update: resourceAwsS3BucketPolicyPut,
 		Delete: resourceAwsS3BucketPolicyDelete,
 
+		Importer: &schema.ResourceImporter{
+			State: schema.ImportStatePassthrough,
+		},
+
 		Schema: map[string]*schema.Schema{
 			"bucket": {
 				Type:     schema.TypeString,
