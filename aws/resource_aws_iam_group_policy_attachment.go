@@ -3,6 +3,7 @@ package aws
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -16,7 +17,21 @@ func resourceAwsIamGroupPolicyAttachment() *schema.Resource {
 		Create: resourceAwsIamGroupPolicyAttachmentCreate,
 		Read:   resourceAwsIamGroupPolicyAttachmentRead,
 		Delete: resourceAwsIamGroupPolicyAttachmentDelete,
+		Importer: &schema.ResourceImporter{
+			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				parts := strings.SplitN(d.Id(), ":", 2)
+				if len(parts) != 2 {
+					return []*schema.ResourceData{}, fmt.Errorf("[ERR] Wrong format of resource: %s. Please follow 'group-name:policy-arn'", d.Id())
+				}
+				group := parts[0]
+				policyArn := parts[1]
+				d.Set("group", group)
+				d.Set("policy_arn", policyArn)
+				d.SetId(resource.PrefixedUniqueId(fmt.Sprintf("%s-", group)))
 
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			"group": &schema.Schema{
 				Type:     schema.TypeString,

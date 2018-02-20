@@ -3,6 +3,7 @@ package aws
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -16,7 +17,21 @@ func resourceAwsIamUserPolicyAttachment() *schema.Resource {
 		Create: resourceAwsIamUserPolicyAttachmentCreate,
 		Read:   resourceAwsIamUserPolicyAttachmentRead,
 		Delete: resourceAwsIamUserPolicyAttachmentDelete,
+		Importer: &schema.ResourceImporter{
+			State: func(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+				parts := strings.SplitN(d.Id(), ":", 2)
+				if len(parts) != 2 {
+					return []*schema.ResourceData{}, fmt.Errorf("[ERR] Wrong format of resource: %s. Please follow 'user-name:policy-arn'", d.Id())
+				}
+				user := parts[0]
+				policyArn := parts[1]
+				d.Set("user", user)
+				d.Set("policy_arn", policyArn)
+				d.SetId(resource.PrefixedUniqueId(fmt.Sprintf("%s-", user)))
 
+				return []*schema.ResourceData{d}, nil
+			},
+		},
 		Schema: map[string]*schema.Schema{
 			"user": &schema.Schema{
 				Type:     schema.TypeString,
